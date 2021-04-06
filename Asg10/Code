@@ -1,0 +1,140 @@
+using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.Generic;
+
+namespace IHateMyLife
+{
+
+    //Models
+    class Store
+    {
+        public int ID { get; set; }
+        public string Name { get; set; }
+        public List<Stock> StoreStocks { get; set; }
+    }
+
+    class Stock
+    {
+        public int ID { get; set; }
+        public DateTime StockDate { get; set; }
+        public int Sold { get; set; }
+        public Store StoreStocks { get; set; }
+        public Product StoreProducts { get; set; }
+    }
+
+    class Product
+    {
+        public int ID { get; set; }
+        public string Name { get; set; }
+        public List<Stock> StoreProducts { get; set; }
+        public List<Shipment> ProductShipments { get; set; }
+    }
+
+    class Shipment
+    {
+        public int ID { get; set; }
+        public DateTime ShipDate { get; set; }
+        public Order OrderShipments { get; set; }
+        public Product ProductShipments { get; set; }
+    }
+
+    class Order
+    {
+        public int ID { get; set; }
+        public int OrderQuantity { get; set; }
+        public List<Shipment> OrderShipments { get; set; }
+    }
+
+    //Install sql server thru nuget
+    // Section DataAccess - ApplicationDBContext
+    class OrderingContext : DbContext
+    {
+        public DbSet<Store> Stores { get; set; }
+        public DbSet<Order> Orders { get; set; }
+        public DbSet<Product> Products { get; set; }
+        public DbSet<Stock> Stocks { get; set; }
+        public DbSet<Shipment> Shipments { get; set; }
+
+        string connectionString = "Server={localdb}\\MSSQLLocalDB;Database=IHateMyLife;Trusted_Connection=True;MultipleActiveResultSets=true";
+        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        {
+            optionsBuilder.UseSqlServer(connectionString);
+        }
+        
+    }
+
+    //Controller section
+    class Program
+    {
+        static void Main(string[] args)
+        {
+            using (OrderingContext context = new OrderingContext())
+            {
+                context.Database.EnsureCreated();
+
+                //Store store = new Store { Name = }
+
+                Product product = new Product { Name = "Oreo" };
+                Product product1 = new Product { Name = "Chicken" };
+                Product product2 = new Product { Name = "Grapes" };
+
+                Stock stock = new Stock
+                {
+                    StoreProducts = product,
+                    Sold = 20,
+                    StockDate = DateTime.Now
+                };
+
+                Stock stock1 = new Stock
+                {
+                    StoreProducts = product,
+                    Sold = 30,
+                    StockDate = DateTime.Now
+                };
+
+                Stock stock2 = new Stock
+                {
+                    StoreProducts = product1,
+                    Sold = 20,
+                    StockDate = DateTime.Now
+                };
+
+                Stock stock3 = new Stock
+                {
+                    StoreProducts = product2,
+                    Sold = 50,
+                    StockDate = DateTime.Now
+                };
+
+                context.Products.Add(product);
+                context.Products.Add(product1);
+                context.Products.Add(product2);
+
+                context.Stocks.Add(stock);
+                context.Stocks.Add(stock1);
+                context.Stocks.Add(stock2);
+                context.Stocks.Add(stock3);
+
+                context.SaveChanges();
+            }
+        }
+    }
+
+    //LINQ 
+    public ViewResult LINQOperations()
+    {
+        Order TotalSold = context.Orders
+                                 .Include(c => c.Stock)
+                                 .Include(c => c.Shipments)
+                                 .Where(c => c.Sold >= 0)
+                                 .First();
+
+        Product TotalSold = context.Orders
+                                 .Include(c => c.Stock)
+                                 .Include(c => c.Shipments)
+                                 .Where(c => c.Sold >= 0)
+                                 .First();
+
+        return View();
+    }
+}
